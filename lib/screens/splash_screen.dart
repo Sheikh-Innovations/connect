@@ -41,8 +41,8 @@ class _SplashScreenState extends State<SplashScreen> {
             ClipOval(
               child: Image.asset(
                 'assets/connectAppLogo.png',
-                height: 200.h,
-                width: 200.h,
+                height: 140.h,
+                width: 140.h,
               ),
             ),
             "Connect".text.size(35.h).color(primaryColor).makeCentered(),
