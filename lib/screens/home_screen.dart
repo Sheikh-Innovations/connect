@@ -23,11 +23,15 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       body: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Padding(
             padding:
                 const EdgeInsets.only(top: 30, bottom: 15, left: 15, right: 15),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Row(
                   children: [
@@ -117,7 +121,7 @@ class HomeScreen extends StatelessWidget {
           ).box.size(width, height * 0.22).color(primaryColor).make(),
 
           /// ----> This Expanded Part is SHOWING TAB BAR with Two Option Chat And Calls <---- ///
-          Expanded(child: CustomTabbar()),
+          const Expanded(child: CustomTabbar()),
         ],
       ),
 
@@ -131,11 +135,11 @@ class HomeScreen extends StatelessWidget {
             backgroundColor: primaryColor,
             elevation: 10,
             onPressed: () {
-              Get.to(() => AiChatScreen());
+              // Get.to(() => AiChatScreen()); AI chat Option Removed
             },
             tooltip: 'Talk With AI',
             child: Icon(
-              CupertinoIcons.chat_bubble_2,
+              CupertinoIcons.add,
               size: 30.h,
               color: whiteColor,
             ),
