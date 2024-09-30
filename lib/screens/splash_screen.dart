@@ -1,3 +1,4 @@
+import 'package:connect/consts/color_const.dart';
 import 'package:connect/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -35,18 +36,16 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              height: 150.h,
-              width: 150.w,
+            ClipOval(
               child: Image.asset(
-                'assets/connectAppLogo.jpg',
-                height: 150.h,
-                width: 150.h,
+                'assets/connectAppLogo.png',
+                height: 200.h,
+                width: 200.h,
               ),
             ),
-            5.heightBox,
-            "Connect".text.size(22.h).black.bold.make()
+            "Connect".text.size(35.h).color(primaryColor).makeCentered(),
           ],
         ),
       ),
