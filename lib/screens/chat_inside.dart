@@ -98,7 +98,7 @@ class ChatInsideScreen extends StatelessWidget {
 
           /// ---> UI part of Sendign Messaging TextFiled <--- ///
           const MessageSendingCustomDesign(),
-          5.h.heightBox,
+          15.h.heightBox,
         ],
       ),
     );

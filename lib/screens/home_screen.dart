@@ -1,6 +1,6 @@
 import 'package:connect/consts/color_const.dart';
 import 'package:connect/custom_widgets/tab_bar.dart';
-import 'package:connect/screens/ai_chat_screen.dart';
+
 import 'package:connect/screens/notification_screen.dart';
 import 'package:connect/screens/profile_screen.dart';
 import 'package:flutter/cupertino.dart';
@@ -27,10 +27,9 @@ class HomeScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Padding(
-            padding:
-                const EdgeInsets.only(top: 30, bottom: 15, left: 15, right: 15),
+            padding: EdgeInsets.only(
+                top: 30.h, bottom: 10.h, left: 15.w, right: 15.w),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Row(
@@ -43,11 +42,10 @@ class HomeScreen extends StatelessWidget {
 
                       /// ** In this Avatar User Image Will be shown ** ///
                       child: CircleAvatar(
-                        maxRadius: 30,
-                        minRadius: 18,
-                        child: ClipOval(
-                            child: Image.asset(
-                                'assets/Avatar.png')), //**User Image will come from database */
+                        maxRadius: 30.r,
+
+                        backgroundImage: const AssetImage(
+                            'assets/Avatar.png'), //**User Image will come from database */
                       ),
                     ),
                     8.widthBox,
@@ -109,18 +107,19 @@ class HomeScreen extends StatelessWidget {
                   fillColor: Colors.grey[200],
                   hint: 'Search in chat...',
                   autofocus: false,
-                  height: 30.h,
                   borderRadius: 10,
                   prefixIcon: Icon(CupertinoIcons.search,
                       size: 25.h, color: Colors.grey),
                   showCursor: false,
                   clear: true,
-                )
+                ),
               ],
             ),
           ).box.size(width, height * 0.22).color(primaryColor).make(),
 
           /// ----> This Expanded Part is SHOWING TAB BAR with Two Option Chat And Calls <---- ///
+
+          20.h.heightBox,
           const Expanded(child: CustomTabbar()),
         ],
       ),
@@ -146,6 +145,86 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class SwitchButtons extends StatelessWidget {
+  final String button1;
+  final String button2;
+
+  final VoidCallback onTapButton1;
+  final VoidCallback onTapButton2;
+  final bool isFirstButtonSelected;
+  const SwitchButtons(
+      {super.key,
+      required this.button1,
+      required this.button2,
+      required this.onTapButton1,
+      required this.onTapButton2,
+      required this.isFirstButtonSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return StatefulBuilder(
+      builder: (BuildContext context, StateSetter setState) {
+        return Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: onTapButton1,
+                child: Container(
+                  height: 35.h,
+                  decoration: BoxDecoration(
+                    color:
+                        isFirstButtonSelected ? primaryColor : Colors.grey[300],
+                    borderRadius:
+                        const BorderRadius.horizontal(left: Radius.circular(8)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      button1,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color:
+                            isFirstButtonSelected ? Colors.white : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap: onTapButton2,
+                child: Container(
+                  height: 35.h,
+                  decoration: BoxDecoration(
+                    color: !isFirstButtonSelected
+                        ? primaryColor
+                        : Colors.grey[300],
+                    borderRadius: const BorderRadius.horizontal(
+                        right: Radius.circular(8)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      button2,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: !isFirstButtonSelected
+                            ? Colors.white
+                            : Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

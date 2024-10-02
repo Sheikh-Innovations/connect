@@ -13,6 +13,8 @@ class ChatScreenConnect extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
         itemCount: 10,
+        shrinkWrap: true,
+        padding:EdgeInsets.zero,
         itemBuilder: (context, inded) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 3),

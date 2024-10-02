@@ -20,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Delay for 2 seconds before navigating to HomeScreen
     Future.delayed(const Duration(seconds: 2), () {
-      Get.off(() => const HomeScreen());
+      Get.off(() =>  HomeScreen());
     });
   }
 
@@ -41,11 +41,11 @@ class _SplashScreenState extends State<SplashScreen> {
             ClipOval(
               child: Image.asset(
                 'assets/connectAppLogo.png',
-                height: 140.h,
-                width: 140.h,
+                height: 80.h,
+                width: 80.h,
               ),
             ),
-            "Connect".text.size(35.h).color(primaryColor).makeCentered(),
+            "CONNECT".text.size(25.sp).color(primaryColor).makeCentered(),
           ],
         ),
       ),

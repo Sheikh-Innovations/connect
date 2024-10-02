@@ -10,11 +10,13 @@ class CallScreenConnect extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
+      padding: EdgeInsets.zero,
         itemCount: 10,
+        shrinkWrap: true,
         itemBuilder: (context, inded) {
           return Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
-
+    
               /// --> CustomListTileCall Design <--- ///
               child: CustomListTileCall(context));
         });
