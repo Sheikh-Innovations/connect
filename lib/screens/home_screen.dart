@@ -99,19 +99,22 @@ class HomeScreen extends StatelessWidget {
                 8.h.heightBox,
 
                 /// ----> Search Bar Option Inside The Header Container <---- ////
-                VxTextField(
-                  onChanged: (value) {
-                    // Handle search logic here to Intregate Search
-                  },
-                  borderType: VxTextFieldBorderType.roundLine,
-                  fillColor: Colors.grey[200],
-                  hint: 'Search in chat...',
-                  autofocus: false,
-                  borderRadius: 10,
-                  prefixIcon: Icon(CupertinoIcons.search,
-                      size: 25.h, color: Colors.grey),
-                  showCursor: false,
-                  clear: true,
+                SizedBox(
+                  height: 35.h,
+                  child: VxTextField(
+                    onChanged: (value) {
+                      // Handle search logic here to Intregate Search
+                    },
+                    borderType: VxTextFieldBorderType.roundLine,
+                    fillColor: Colors.grey[200],
+                    hint: 'Search in chat...',
+                    autofocus: false,
+                    borderRadius: 10,
+                    prefixIcon: Icon(CupertinoIcons.search,
+                        size: 25.h, color: Colors.grey),
+                    showCursor: false,
+                    clear: true,
+                  ),
                 ),
               ],
             ),
