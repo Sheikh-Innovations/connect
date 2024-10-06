@@ -1,5 +1,6 @@
 import 'package:connect/consts/color_const.dart';
 import 'package:connect/screens/home_screen.dart';
+import 'package:connect/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -20,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Delay for 2 seconds before navigating to HomeScreen
     Future.delayed(const Duration(seconds: 2), () {
-      Get.off(() =>  HomeScreen());
+      Get.off(() => const LoginPage());
     });
   }
 
