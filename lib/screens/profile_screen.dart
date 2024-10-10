@@ -1,4 +1,5 @@
-import 'package:connect/custom_widgets/custom_profile_row.dart';
+import 'package:connect/data/providers/hive_service.dart';
+import 'package:connect/utils/common_widgets/custom_profile_row.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -16,6 +17,13 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        actions: [
+          IconButton(
+              onPressed: () {
+                HiveService.instance.signOut();
+              },
+              icon: const Icon(Icons.logout))
+        ],
         leading: GestureDetector(
           onTap: () {
             Get.back();

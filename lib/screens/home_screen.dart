@@ -1,13 +1,19 @@
-import 'package:connect/consts/color_const.dart';
-import 'package:connect/custom_widgets/tab_bar.dart';
+import 'package:connect/modules/auth/views/available_contacts.dart';
+import 'package:connect/utils/consts/color_const.dart';
+import 'package:connect/utils/common_widgets/tab_bar.dart';
 
 import 'package:connect/screens/notification_screen.dart';
 import 'package:connect/screens/profile_screen.dart';
+import 'package:connect/utils/functions.dart';
+import 'package:connect/utils/notification_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:velocity_x/velocity_x.dart';
+
+import '../data/providers/hive_service.dart';
 
 ///@description: This is the home Screen Of the App
 ///@param: this Contain Search,Name,Image,param
@@ -28,7 +34,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           Padding(
             padding: EdgeInsets.only(
-                top: 30.h, bottom: 10.h, left: 15.w, right: 15.w),
+                top: 35.h, bottom: 10.h, left: 15.w, right: 15.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -52,7 +58,7 @@ class HomeScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        "Jhon Doe"
+                        (HiveService.instance.userData?.name ?? 'John Doe')
                             .text
                             .size(20.h)
                             .white
@@ -65,55 +71,65 @@ class HomeScreen extends StatelessWidget {
                             .make(),
                       ],
                     ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        /// --> Notification Button Icon <-- //
-                        GestureDetector(
-                          onTap: () {
-                            // WIll take to notification sccreen
-                            Get.to(() => const NotificationScreen());
-                          },
-                          child: Icon(
-                            CupertinoIcons.bell_fill,
-                            color: whiteColor,
-                            size: 25.h,
-                          ),
-                        ),
-                        5.widthBox,
-                        // ---> More Button <---//
-                        GestureDetector(
-                          onTap: () {
-                            //FUNCTION need to add what will happen clicking the More button
-                          },
-                          child: Icon(
-                            Icons.more_vert_sharp,
-                            color: whiteColor,
-                            size: 25.h,
-                          ),
-                        )
-                      ],
+                    58.widthBox,
+
+                    GestureDetector(
+                      onTap: () {
+                 
+                        // // WIll take to notification sccreen
+                        // Get.to(() => const NotificationScreen());
+                      },
+                      child: Icon(
+                        CupertinoIcons.bell_fill,
+                        color: whiteColor,
+                        size: 25.h,
+                      ),
                     ),
+                    // Row(
+                    //   children: [
+
+                    //     // ---> More Button <---//
+                    //     // PopupMenuButton(
+
+                    //     //   padding: EdgeInsets.zero,
+                    //     //     iconColor: Colors.white,
+                    //     //     itemBuilder: (ctx) => [
+                    //     //           const PopupMenuItem(child: Text('Settings')),
+                    //     //           PopupMenuItem(
+                    //     //               onTap: () {}, child: const Text('Logout'))
+                    //     //         ])
+                    //   ],
+                    // ),
                   ],
                 ),
                 8.h.heightBox,
 
                 /// ----> Search Bar Option Inside The Header Container <---- ////
                 SizedBox(
-                  height: 35.h,
-                  child: VxTextField(
+                  height: 35.0.h, // Adjust height as needed
+                  child: TextFormField(
+                    textAlignVertical: TextAlignVertical.center,
                     onChanged: (value) {
-                      // Handle search logic here to Intregate Search
+                      // Handle search logic here to integrate search
                     },
-                    borderType: VxTextFieldBorderType.roundLine,
-                    fillColor: Colors.grey[200],
-                    hint: 'Search in chat...',
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8.0),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      hintText: 'Search in chat...',
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.circular(10.0), // Rounded corners
+                        borderSide: BorderSide.none, // No border line
+                      ),
+                      prefixIcon: const Icon(
+                        CupertinoIcons.search,
+                        size: 25.0, // Adjust icon size as needed
+                        color: Colors.grey,
+                      ),
+                    ),
                     autofocus: false,
-                    borderRadius: 10,
-                    prefixIcon: Icon(CupertinoIcons.search,
-                        size: 25.h, color: Colors.grey),
-                    showCursor: false,
-                    clear: true,
+                    showCursor: false, // Hide cursor if desired
                   ),
                 ),
               ],
@@ -137,7 +153,7 @@ class HomeScreen extends StatelessWidget {
             backgroundColor: primaryColor,
             elevation: 10,
             onPressed: () {
-              // Get.to(() => AiChatScreen()); AI chat Option Removed
+              Get.to(() => const ContactComparisonScreen()); 
             },
             tooltip: 'Talk With AI',
             child: Icon(

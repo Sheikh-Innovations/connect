@@ -1,14 +1,35 @@
+import 'package:connect/data/bindings/binding.dart';
+import 'package:connect/data/models/local/message_hive_data.dart';
+
+import 'package:connect/data/providers/hive_service.dart';
 import 'package:connect/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Hive and HiveService singleton
+
+  await Hive.initFlutter();
+  await HiveService.instance.adapterInit(); // Register the adapter
+  await HiveService.instance.boxInit(); 
+  //  HiveService.instance.saveOrUpdateInbox(MessageHiveData(
+  //                 senderId: "75",
+  //                 message: 'Hi',
+  //                 name: 'Farhana',
+  //                 isSeen: false,
+  //                 isTyping: false,
+  //                 timestamp: DateTime.now()));
+
+  runApp(const ConnectApp());
+  // Open the box
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ConnectApp extends StatelessWidget {
+  const ConnectApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +39,8 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return GetMaterialApp(
           title: 'Connect',
+          debugShowCheckedModeBanner: false,
+          initialBinding: DependencyBinding(),
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
             useMaterial3: true,

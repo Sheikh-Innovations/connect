@@ -1,4 +1,4 @@
-import 'package:connect/custom_widgets/custom_notification_design.dart';
+import 'package:connect/utils/common_widgets/custom_notification_design.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,7 +12,7 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+    
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,

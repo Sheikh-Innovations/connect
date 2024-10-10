@@ -1,6 +1,7 @@
-import 'package:connect/consts/color_const.dart';
+import 'package:connect/data/providers/hive_service.dart';
+import 'package:connect/utils/consts/color_const.dart';
 import 'package:connect/screens/home_screen.dart';
-import 'package:connect/screens/login_screen.dart';
+import 'package:connect/modules/auth/views/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -21,7 +22,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Delay for 2 seconds before navigating to HomeScreen
     Future.delayed(const Duration(seconds: 2), () {
-      Get.off(() => const LoginPage());
+      if (HiveService.instance.userData?.token == null) {
+        Get.off(() => const LoginPage());
+      } else {
+        Get.off(() => const HomeScreen());
+      }
     });
   }
 

@@ -1,5 +1,8 @@
-import 'package:connect/consts/color_const.dart';
-import 'package:connect/custom_widgets/message_send_custom_desing.dart';
+import 'package:connect/data/providers/hive_service.dart';
+import 'package:connect/modules/auth/controllers/home_controller.dart';
+import 'package:connect/utils/consts/color_const.dart';
+import 'package:connect/utils/common_widgets/message_send_custom_desing.dart';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -10,30 +13,37 @@ import 'package:velocity_x/velocity_x.dart';
 ///@Function: it will just show conversation between User and User.
 ///Chat bubbles will contain Chat Messages
 ///And which one is user Message will be decide by  isUser this param, This is boolean param
-class ChatInsideScreen extends StatelessWidget {
-  ChatInsideScreen({super.key});
+class ChatInsideScreen extends StatefulWidget {
+  final String name;
+  final String senderId;
+  const ChatInsideScreen(
+      {super.key, required this.name, required this.senderId});
 
-  /// ---> These are the Demo Message  , chat functions needs to add <--- ///
-  final List<Message> messages = [
-    Message(
-        text: "Hey How Are?", isUser: true, avatarPath: "assets/Avatar.png"),
-    Message(
-        text: "i am absolutey Rocking, Tell me About You",
-        isUser: false,
-        avatarPath: "assets/Avatar.png"),
-    Message(
-        text: "THings are also great for me!",
-        isUser: true,
-        avatarPath: "assets/Avatar.png"),
-    Message(
-        text: " So How is your app development process going?",
-        isUser: false,
-        avatarPath: "assets/Avatar.png"),
-    Message(
-        text: "It's on the Last stage",
-        isUser: true,
-        avatarPath: "assets/Avatar.png"),
-  ];
+  @override
+  State<ChatInsideScreen> createState() => _ChatInsideScreenState();
+}
+
+class _ChatInsideScreenState extends State<ChatInsideScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((t) {
+      final controller = Get.find<HomeController>();
+      controller.getRoomMessage(widget.senderId);
+      controller.updateAvailsoundId(widget.senderId);
+    });
+  }
+
+  final textCtr = TextEditingController();
+  @override
+  void dispose() {
+    WidgetsBinding.instance.addPostFrameCallback((t) {
+      Get.find<HomeController>().clearId();
+      textCtr.dispose();
+    });
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +57,7 @@ class ChatInsideScreen extends StatelessWidget {
         leading: Row(
           children: [
             IconButton(
-              icon: Icon(CupertinoIcons.back, color: Colors.white),
+              icon: const Icon(CupertinoIcons.back, color: Colors.white),
               onPressed: () {
                 Get.back();
               },
@@ -58,7 +68,7 @@ class ChatInsideScreen extends StatelessWidget {
               child: ClipOval(child: Image.asset('assets/Avatar.png')),
             ),
             10.h.widthBox,
-            "John Doe".text.white.size(15.h).bold.make(),
+            widget.name.text.white.size(15.h).bold.make(),
           ],
         ),
         actions: [
@@ -82,25 +92,48 @@ class ChatInsideScreen extends StatelessWidget {
       ),
 
       /// ---> Body Part Showing Messages of Users <---- ///
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ListView.builder(
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  return ChatBubble(message: messages[index]);
-                },
+      body: GetBuilder<HomeController>(builder: (ctr) {
+        return Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Scrollbar(
+                  interactive: true,
+                  thickness: 5,
+                  controller: ctr.messageController,
+                  child: ListView.builder(
+                    itemCount: ctr.roomMessages.length,
+                    controller: ctr.messageController,
+                    reverse: true,
+                    cacheExtent: 300,
+                    itemBuilder: (context, index) {
+                      final itemCount = ctr.roomMessages.length;
+                      int reversedIndex = itemCount - 1 - index;
+                      return ChatBubble(
+                          message: Message(
+                              text: ctr.roomMessages[reversedIndex].message,
+                              isUser: ctr.isUser(
+                                  HiveService.instance.userData?.id ?? '',
+                                  ctr.roomMessages[reversedIndex].senderId),
+                              avatarPath: "assets/Avatar.png"));
+                    },
+                  ),
+                ),
               ),
             ),
-          ),
 
-          /// ---> UI part of Sendign Messaging TextFiled <--- ///
-          const MessageSendingCustomDesign(),
-          15.h.heightBox,
-        ],
-      ),
+            /// ---> UI part of Sendign Messaging TextFiled <--- ///
+            onMessageSendButton(
+                textCtr: textCtr,
+                onTap: () {
+                  ctr.sendMessage(widget.senderId, textCtr.text);
+                  textCtr.clear();
+                }),
+            15.h.heightBox,
+          ],
+        );
+      }),
     );
   }
 }
@@ -119,7 +152,7 @@ class ChatBubble extends StatelessWidget {
   final Message message;
 
   /// In the Bubble Message will be shown
-  ChatBubble({required this.message});
+  const ChatBubble({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
