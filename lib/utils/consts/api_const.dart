@@ -1,5 +1,5 @@
 class ApiConst {
-
+static const socketbaseUrl = 'https://connect.sumonsheikh.dev';
 static const String baseUrl = 'https://connect.sumonsheikh.dev/api';
 
 static const String login = '$baseUrl/auth/login';

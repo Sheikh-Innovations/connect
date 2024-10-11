@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:connect/data/models/local/message_hive_data.dart';
 import 'package:connect/data/models/remote/message_data.dart';
 import 'package:connect/data/providers/hive_service.dart';
+import 'package:connect/utils/consts/api_const.dart';
 import 'package:connect/utils/consts/asset_const.dart';
 import 'package:connect/utils/notification_manager.dart';
 import 'package:flutter/cupertino.dart';
@@ -84,7 +85,7 @@ class HomeController extends GetxController implements GetxService {
         .enableForceNew()
         .build();
 
-    socket = io.io('https://connect.sumonsheikh.dev', options);
+    socket = io.io(ApiConst.socketbaseUrl, options);
     socket.onConnect((data) {
       if (kDebugMode) {
         print('Connected to Socket');
@@ -94,7 +95,9 @@ class HomeController extends GetxController implements GetxService {
 
     socket.on('message', (data) {
       final receivedData = MessageData.fromMap(data);
-
+      print('Received message from WebSocket: ${receivedData.timestamp}');
+      print(
+          'Received message from WebSocket: ${receivedData.timestamp.runtimeType}');
       saveMessages(receivedData.toHiveData());
       playReceiveMsgSound(receivedData.senderId, receivedData);
 
@@ -123,9 +126,9 @@ class HomeController extends GetxController implements GetxService {
             isSeen: false,
             isTyping: false,
             message: message,
-            senderId: HiveService.instance.userData?.id ?? '',
+            senderId: recipientId,
             avater: null,
-            recipientId: recipientId,
+            recipientId: HiveService.instance.userData?.id ?? '',
             name: HiveService.instance.userData?.name ?? '',
             timestamp: DateTime.now())
         .toJson());

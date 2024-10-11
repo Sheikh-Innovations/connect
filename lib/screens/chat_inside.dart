@@ -35,6 +35,7 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
   }
 
   final textCtr = TextEditingController();
+    final FocusNode focusNode = FocusNode();
   @override
   void dispose() {
     WidgetsBinding.instance.addPostFrameCallback((t) {
@@ -125,6 +126,7 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
 
             /// ---> UI part of Sendign Messaging TextFiled <--- ///
             onMessageSendButton(
+                 focusNode: focusNode, // Pass the FocusNode here
                 textCtr: textCtr,
                 onTap: () {
                   ctr.sendMessage(widget.senderId, textCtr.text);

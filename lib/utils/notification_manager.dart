@@ -2,76 +2,64 @@ import 'dart:io';
 
 import 'package:connect/modules/auth/controllers/home_controller.dart';
 import 'package:flutter/foundation.dart';
+
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
+// Top-level function for background notification handling
+@pragma('vm:entry-point')
+void backgroundNotificationHandler(NotificationResponse details) {
+  if (kDebugMode) {
+    print('button pressed');
+  } // Handle the background notification response
+}
+
 class NotificationManager {
-  static final NotificationManager _instance = NotificationManager._internal();
+  static final NotificationManager _instance =
+      NotificationManager._privateConstructor();
   factory NotificationManager() => _instance;
 
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
   var appName = 'Connect';
 
   static NotificationManager get instance => _instance;
-  NotificationManager._internal() {
-    init();
-  }
+  NotificationManager._privateConstructor();
 
   Future<void> init() async {
     // for user permission
 
-    // notification icon for android
+    // Notification icon for android
+
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('ic_launcher');
-    // notification icon for ios
-    DarwinInitializationSettings initializationSettingsIOS =
+
+    /// Note: permissions aren't requested here just to demonstrate that can be
+    /// done later
+    const DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-      onDidReceiveLocalNotification: (
-        int id,
-        String? title,
-        String? body,
-        String? payload,
-      ) async {},
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
     );
-
-    InitializationSettings initializationSettings = InitializationSettings(
+    final LinuxInitializationSettings initializationSettingsLinux =
+        LinuxInitializationSettings(
+      defaultActionName: 'Open notification',
+      defaultIcon: AssetsLinuxIcon('icons/app_icon.png'),
+    );
+    final InitializationSettings initializationSettings =
+        InitializationSettings(
       android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
+      iOS: initializationSettingsDarwin,
+      macOS: initializationSettingsDarwin,
+      linux: initializationSettingsLinux,
     );
-
-    await _flutterLocalNotificationsPlugin.initialize(
+    await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: _onDidReceiveNotificationResponse,
-    );
-  }
-
-  Future<void> showNotification({
-    int id = 0,
-    String title = '',
-    String body = '',
-  }) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'channel_id',
-      'channelName',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-      iOS: DarwinNotificationDetails(),
-    );
-    await _flutterLocalNotificationsPlugin.show(
-      877,
-      title,
-      body,
-      platformChannelSpecifics,
+      onDidReceiveBackgroundNotificationResponse: backgroundNotificationHandler,
     );
   }
 
@@ -136,7 +124,7 @@ class NotificationManager {
     model.iosDetails ??= _highDarwinNotificationDetails;
 
     if (isMobile || Platform.isMacOS || Platform.isLinux) {
-      await _flutterLocalNotificationsPlugin.show(
+      await flutterLocalNotificationsPlugin.show(
         model.id,
         model.title,
         model.body,
@@ -181,11 +169,15 @@ class NotificationManager {
           AndroidNotificationAction(
             "1",
             makeAsRead,
+            showsUserInterface: true,
+            cancelNotification: false,
           ),
           AndroidNotificationAction(
             "2",
             reply,
             allowGeneratedReplies: true,
+            showsUserInterface: true,
+            cancelNotification: false,
             inputs: [
               AndroidNotificationActionInput(
                 label: yourMessage,
@@ -236,14 +228,18 @@ bool get isMobile {
 @pragma('vm:entry-point')
 void _onDidReceiveNotificationResponse(NotificationResponse details) {
   if (details.actionId == "1") {
-        Get.find<HomeController>().sendMessage('54788787878','yghjhj');
     // Handle "Mark as read" action
-    print("Mark as read clicked");
+    if (kDebugMode) {
+      print("Mark as read clicked");
+    }
   } else if (details.actionId == "2") {
-
-    Get.find<HomeController>().sendMessage('54788787878','yghjhj');
-    // Handle reply action and extract the input
     final replyText = details.input;
-    print("Reply received: $replyText");
+    Get.find<HomeController>()
+        .sendMessage(details.payload ?? '', replyText ?? '');
+    // Handle reply action and extract the input
+
+    if (kDebugMode) {
+      print("Reply received: $replyText");
+    }
   }
 }

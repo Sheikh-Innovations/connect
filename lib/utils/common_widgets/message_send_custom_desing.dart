@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 ///@Description: This Is Custom Design of Sending Message Input
 ///@function: Mesage Sendign Function,emoji,attachment,
 Widget onMessageSendButton(
-    {required VoidCallback onTap, required TextEditingController textCtr}) {
+    {required VoidCallback onTap, required TextEditingController textCtr,   required FocusNode focusNode, }) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
     child: Row(
@@ -33,7 +33,8 @@ Widget onMessageSendButton(
               children: [
                 Expanded(
                   child: TextField(
-                    maxLines: 50,
+                    maxLines: null,
+                    focusNode: focusNode,
                     minLines: 1,
                     textCapitalization: TextCapitalization.sentences,
                     controller: textCtr,
