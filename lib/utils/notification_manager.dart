@@ -7,6 +7,7 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 
+
 // Top-level function for background notification handling
 @pragma('vm:entry-point')
 void backgroundNotificationHandler(NotificationResponse details) {
@@ -29,10 +30,7 @@ class NotificationManager {
   NotificationManager._privateConstructor();
 
   Future<void> init() async {
-    // for user permission
-
-    // Notification icon for android
-
+  
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('ic_launcher');
 
@@ -197,6 +195,8 @@ class NotificationManager {
         presentSound: true,
         presentBadge: true,
       );
+
+  
 }
 
 class ShowPluginNotificationModel {

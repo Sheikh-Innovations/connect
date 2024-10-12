@@ -4,23 +4,22 @@ import 'package:velocity_x/velocity_x.dart';
 
 ///@description:Custom ListTile Style for Chat Tile
 ///@param: last message,name,time
-Widget customListTileChat(BuildContext context, String name, String msg, DateTime time) {
+Widget customListTileChat(BuildContext context, String name, String msg,
+    DateTime time, bool isOnline) {
   double height = MediaQuery.sizeOf(context).height;
   double width = MediaQuery.sizeOf(context).width;
 
+  String formatCurrentTime(DateTime time) {
+    // Get current UTC time
+    DateTime utcNow = time.toUtc();
 
+    // Convert to Bangladesh time (UTC+6)
+    DateTime bangladeshTime = utcNow.add(const Duration(hours: 6));
 
-String formatCurrentTime(DateTime time) {
-  // Get current UTC time
-  DateTime utcNow =time.toUtc();
-
-  // Convert to Bangladesh time (UTC+6)
-  DateTime bangladeshTime = utcNow.add(const Duration(hours: 6));
-
-  // Format time as 'hh.mm a' (11.20 PM)
-  final formatter = DateFormat('hh.mm a');
-  return formatter.format(bangladeshTime);
-}
+    // Format time as 'hh.mm a' (11.20 PM)
+    final formatter = DateFormat('hh.mm a');
+    return formatter.format(bangladeshTime);
+  }
 
   return ListTile(
     leading: Stack(
@@ -39,7 +38,9 @@ String formatCurrentTime(DateTime time) {
             height: 15,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.green, // Color of the small circle
+              color: isOnline
+                  ? Colors.green
+                  : Colors.grey, // Color of the small circle
               border: Border.all(
                 color: Colors
                     .white, // Optional: Border color around the small circle
@@ -55,7 +56,6 @@ String formatCurrentTime(DateTime time) {
     trailing: formatCurrentTime(time).text.make(), //time of sending
   ).box.size(width, height * 0.09).make();
 }
-
 
 String limitTo22Characters(String input) {
   // Check if the input is longer than 20 characters

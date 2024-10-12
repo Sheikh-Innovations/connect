@@ -35,7 +35,10 @@ class ChatScreenConnect extends StatelessWidget {
                     context,
                     ctr.inboxMessages[index].name,
                     ctr.inboxMessages[index].message,
-                    ctr.inboxMessages[index].timestamp),
+                    ctr.inboxMessages[index].timestamp,
+                    ctr.isOnline(ctr.inboxMessages[index].senderId)
+                    
+                    ),
               ),
             );
           });

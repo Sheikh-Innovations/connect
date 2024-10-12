@@ -5,6 +5,7 @@ import 'package:connect/modules/auth/views/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:velocity_x/velocity_x.dart';
 
 ///@Description: Simple Splash Screen with logo and appname
@@ -19,7 +20,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-
+    checkAndRequestNotificationPermission();
     // Delay for 2 seconds before navigating to HomeScreen
     Future.delayed(const Duration(seconds: 2), () {
       if (HiveService.instance.userData?.token == null) {
@@ -56,5 +57,22 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> checkAndRequestNotificationPermission() async {
+    PermissionStatus status = await Permission.notification.status;
+
+    if (status.isDenied || status.isPermanentlyDenied) {
+      // Request permission
+      PermissionStatus result = await Permission.notification.request();
+
+      if (result.isGranted) {
+        print('Notification permission granted.');
+      } else {
+        print('Notification permission denied.');
+      }
+    } else if (status.isGranted) {
+      print('Notification permission already granted.');
+    }
   }
 }

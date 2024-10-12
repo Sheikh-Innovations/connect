@@ -75,20 +75,8 @@ class HomeScreen extends StatelessWidget {
 
                     GestureDetector(
                       onTap: () {
-                        // NotificationManager.instance
-                        //     .showNotificationWithActions();
-                                              NotificationManager.instance.showChatNotification(
-                          model: ShowPluginNotificationModel(
-                            id: 0,
-                            title: 'jjnj',
-                            payload: '54788787878',
-                            body: 'checking',
-                          ),
-                          userImage:
-                              'https://img.freepik.com/free-photo/androgynous-avatar-non-binary-queer-person_23-2151100270.jpg',
-                          userName: 'ji',
-                          conversationTitle: 'New Message',
-                        );
+                     
+       
 
                         // // WIll take to notification sccreen
                         // Get.to(() => const NotificationScreen());

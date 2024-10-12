@@ -8,7 +8,7 @@ import 'package:connect/utils/consts/asset_const.dart';
 import 'package:connect/utils/notification_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
+
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -22,11 +22,15 @@ class HomeController extends GetxController implements GetxService {
   var availReceiveSoundId = ''.obs;
   late AudioPlayer _audioPlayer;
   late io.Socket socket;
+  var senderIds = [].obs;
 
+  var onlineUsers = [].obs;
   Future<void> getInbox() async {
     try {
       var data = await HiveService.instance.getInboxMessages();
       inboxMessages.value = data.map((message) {
+        senderIds.add(message.senderId);
+        listenOnlineUser();
         return MessageData.fromMessageData(message);
       }).toList();
 
@@ -87,6 +91,7 @@ class HomeController extends GetxController implements GetxService {
 
     socket = io.io(ApiConst.socketbaseUrl, options);
     socket.onConnect((data) {
+      requestOnline();
       if (kDebugMode) {
         print('Connected to Socket');
       }
@@ -95,9 +100,7 @@ class HomeController extends GetxController implements GetxService {
 
     socket.on('message', (data) {
       final receivedData = MessageData.fromMap(data);
-      print('Received message from WebSocket: ${receivedData.timestamp}');
-      print(
-          'Received message from WebSocket: ${receivedData.timestamp.runtimeType}');
+
       saveMessages(receivedData.toHiveData());
       playReceiveMsgSound(receivedData.senderId, receivedData);
 
@@ -126,9 +129,9 @@ class HomeController extends GetxController implements GetxService {
             isSeen: false,
             isTyping: false,
             message: message,
-            senderId: recipientId,
+            senderId: HiveService.instance.userData?.id ?? '',
             avater: null,
-            recipientId: HiveService.instance.userData?.id ?? '',
+            recipientId: recipientId,
             name: HiveService.instance.userData?.name ?? '',
             timestamp: DateTime.now())
         .toJson());
@@ -140,6 +143,13 @@ class HomeController extends GetxController implements GetxService {
         .updateMessageProperty(senderId: recipientId, message: message);
     if (kDebugMode) {
       print('Message sent to recipient $recipientId: $message');
+    }
+  }
+
+  requestOnline() {
+    String jsonData = jsonEncode(senderIds);
+    if (senderIds.isNotEmpty) {
+      socket.emit('checkOnline', jsonData);
     }
   }
 
@@ -166,7 +176,7 @@ class HomeController extends GetxController implements GetxService {
         model: ShowPluginNotificationModel(
           id: 0,
           title: data.name,
-          payload: '',
+          payload: data.senderId,
           body: data.message,
         ),
         userImage:
@@ -216,6 +226,18 @@ class HomeController extends GetxController implements GetxService {
         );
       }
     });
+  }
+
+  void listenOnlineUser() {
+    socket.on('onlineUsers', (data) {
+      onlineUsers.value =
+          List<String>.from(data); // Update the online users list
+      update(); // Notify listeners to rebuild the UI
+    });
+  }
+
+  bool isOnline(String idToCheck) {
+    return onlineUsers.contains(idToCheck);
   }
 
   @override
