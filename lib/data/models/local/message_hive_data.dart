@@ -28,7 +28,10 @@ class MessageHiveData {
 
   @HiveField(7) // Add this line for recipientId
   final String recipientId; // New field for recipientId
-
+  @HiveField(8) // Add this for _id
+  final String messageId; // New field for storing the message ID (_id)
+  @HiveField(9) // Add this for _id
+  final String repliedMsgId;
   MessageHiveData({
     required this.senderId,
     required this.message,
@@ -36,9 +39,13 @@ class MessageHiveData {
     this.avater,
     required this.isSeen,
     required this.isTyping,
+    required this.repliedMsgId,
+    required this.messageId, // Add required _id field
     required this.timestamp,
     String? recipientId, // Change this line
-  }) : recipientId = recipientId ?? HiveService.instance.userData?.id ?? ''; // Default value
+  }) : recipientId = recipientId ??
+            HiveService.instance.userData?.id ??
+            ''; // Default value
 }
 
 //flutter packages pub run build_runner build

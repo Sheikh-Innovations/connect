@@ -128,6 +128,8 @@ class HiveService {
         message: message ?? existingMessage.message,
         name: existingMessage.name,
         avater: existingMessage.avater,
+        repliedMsgId : existingMessage.repliedMsgId,
+        messageId: existingMessage.messageId,
         isSeen: isSeen ?? existingMessage.isSeen, // Update only if provided
         isTyping:
             isTyping ?? existingMessage.isTyping, // Update only if provided

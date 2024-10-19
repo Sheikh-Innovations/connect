@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:connect/data/models/local/message_hive_data.dart';
 import 'package:connect/data/models/remote/message_data.dart';
@@ -25,6 +26,9 @@ class HomeController extends GetxController implements GetxService {
   var senderIds = [].obs;
 
   var onlineUsers = [].obs;
+
+  var isTyping = <String>[].obs; // List to store typing users (observable)
+
   Future<void> getInbox() async {
     try {
       var data = await HiveService.instance.getInboxMessages();
@@ -50,6 +54,8 @@ class HomeController extends GetxController implements GetxService {
           senderId: message.senderId,
           message: message.message,
           name: message.name,
+          messageId: message.messageId,
+          repliedMsgId: message.repliedMsgId,
           recipientId: message.recipientId,
           isSeen: message.isSeen,
           isTyping: message.isTyping,
@@ -99,6 +105,7 @@ class HomeController extends GetxController implements GetxService {
     });
 
     socket.on('message', (data) {
+      print('Received message from WebSocket: ${data}');
       final receivedData = MessageData.fromMap(data);
 
       saveMessages(receivedData.toHiveData());
@@ -110,6 +117,33 @@ class HomeController extends GetxController implements GetxService {
       // Handle the received message as needed
     });
 
+    // Listen for 'typing' event from socket
+    socket.on('typing', (data) {
+      // Parse the data into TypingStatus model
+      final typing = TypingStatus.fromJson(data);
+
+      // Update UI after changes
+      update();
+
+      if (typing.isTyping) {
+        // Add unique senderId if not already present
+        if (!isTyping.contains(typing.senderId)) {
+          isTyping.add(typing.senderId);
+          update();
+        }
+      } else {
+        // Remove the senderId when typing stops
+        isTyping.remove(typing.senderId);
+        update();
+      }
+
+      if (kDebugMode) {
+        print(isTyping);
+        print('Received message from WebSocket: ${typing.senderId}');
+      }
+
+      // Handle the received message as needed
+    });
     socket.onDisconnect((_) {
       if (kDebugMode) {
         print('Disconnected Socket');
@@ -117,9 +151,21 @@ class HomeController extends GetxController implements GetxService {
     });
   }
 
+  String generateHexId() {
+    var random = Random();
+    const hexChars = '0123456789abcdef';
+    return List.generate(24, (index) => hexChars[random.nextInt(16)]).join();
+  }
+
   // Function to emit message data
-  void sendMessage(String recipientId, String message) {
-    final data = {"recipientId": recipientId, "message": message};
+  void sendMessage(String recipientId, String message, [String repliedMsgId = "false"]) {
+    final msgId = generateHexId();
+    final data = {
+      "recipientId": recipientId,
+      "message": message,
+      "messageId": msgId,
+      "repliedMsgId": repliedMsgId
+    };
     // Convert Map to JSON string
     String jsonData = jsonEncode(data);
     // Emit the message data to the server
@@ -129,6 +175,8 @@ class HomeController extends GetxController implements GetxService {
             isSeen: false,
             isTyping: false,
             message: message,
+            messageId: msgId,
+            repliedMsgId: repliedMsgId,
             senderId: HiveService.instance.userData?.id ?? '',
             avater: null,
             recipientId: recipientId,
@@ -240,10 +288,37 @@ class HomeController extends GetxController implements GetxService {
     return onlineUsers.contains(idToCheck);
   }
 
+  bool isTypingCheck(String idToCheck) {
+    return isTyping.contains(idToCheck);
+  }
+
   @override
   void onClose() {
     socket.dispose();
     _audioPlayer.dispose();
     super.onClose();
+  }
+}
+
+class TypingStatus {
+  final String senderId;
+  final bool isTyping;
+
+  TypingStatus({required this.senderId, required this.isTyping});
+
+  // Method to convert a JSON map into a TypingStatus object
+  factory TypingStatus.fromJson(Map<String, dynamic> json) {
+    return TypingStatus(
+      senderId: json['senderId'],
+      isTyping: json['isTyping'],
+    );
+  }
+
+  // Method to convert a TypingStatus object into a JSON map
+  Map<String, dynamic> toJson() {
+    return {
+      'senderId': senderId,
+      'isTyping': isTyping,
+    };
   }
 }

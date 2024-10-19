@@ -34,7 +34,7 @@ class ChatScreenConnect extends StatelessWidget {
                 child: customListTileChat(
                     context,
                     ctr.inboxMessages[index].name,
-                    ctr.inboxMessages[index].message,
+                    ctr.isTypingCheck(ctr.inboxMessages[index].senderId) ==true? "Typing..": ctr.inboxMessages[index].message,
                     ctr.inboxMessages[index].timestamp,
                     ctr.isOnline(ctr.inboxMessages[index].senderId)
                     

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:connect/data/providers/hive_service.dart';
 import 'package:connect/modules/auth/controllers/home_controller.dart';
 import 'package:connect/utils/consts/color_const.dart';
@@ -35,17 +38,39 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
   }
 
   final textCtr = TextEditingController();
-    final FocusNode focusNode = FocusNode();
+  final FocusNode focusNode = FocusNode();
   @override
   void dispose() {
     WidgetsBinding.instance.addPostFrameCallback((t) {
       Get.find<HomeController>().clearId();
       textCtr.dispose();
     });
-
+    _debounce?.cancel();
     super.dispose();
   }
 
+  void _onTextChanged(String text) {
+    bool isTyping = text.isNotEmpty;
+
+    // Check if the typing state has changed to prevent unnecessary emits
+    if (isTyping != _lastTypingState) {
+      _lastTypingState = isTyping; // Update the last known state
+
+      // Debouncing logic to delay the emit action
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _debounce = Timer(const Duration(milliseconds: 500), () {
+        final data = {"recipientId": widget.senderId, "isTyping": isTyping};
+        // Convert Map to JSON string
+        String jsonData = jsonEncode(data);
+        // Emit typing event after the debounce duration
+        Get.find<HomeController>().socket.emit(
+            'typing',jsonData);
+      });
+    }
+  }
+
+  Timer? _debounce;
+  bool _lastTypingState = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,15 +148,24 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
                 ),
               ),
             ),
+            Align(
+                alignment: Alignment.topLeft,
+                child: ctr.isTypingCheck(widget.senderId) == true
+                    ? const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text("Typing.."),
+                      )
+                    : const SizedBox.shrink()),
 
             /// ---> UI part of Sendign Messaging TextFiled <--- ///
             onMessageSendButton(
-                 focusNode: focusNode, // Pass the FocusNode here
+                focusNode: focusNode, // Pass the FocusNode here
                 textCtr: textCtr,
                 onTap: () {
                   ctr.sendMessage(widget.senderId, textCtr.text);
                   textCtr.clear();
-                }),
+                },
+                onChanged: _onTextChanged),
             15.h.heightBox,
           ],
         );

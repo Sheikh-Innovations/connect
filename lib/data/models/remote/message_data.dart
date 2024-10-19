@@ -8,8 +8,10 @@ class MessageData {
   final String? avater;
   final bool isSeen;
   final bool isTyping;
-  final String recipientId; // New field for recipientId
+  final String recipientId;
   final DateTime timestamp;
+  final String repliedMsgId;
+  final String messageId; // New field for _id
 
   MessageData({
     required this.senderId,
@@ -18,8 +20,10 @@ class MessageData {
     this.avater,
     required this.isSeen,
     required this.isTyping,
-    required this.recipientId, // Add recipientId to the constructor
+    required this.repliedMsgId,
+    required this.recipientId,
     required this.timestamp,
+    required this.messageId, // Add _id to the constructor
   });
 
   // Factory constructor to convert from MessageHiveData to MessageData
@@ -29,10 +33,12 @@ class MessageData {
       message: messageData.message,
       name: messageData.name,
       avater: messageData.avater,
+      repliedMsgId: messageData.repliedMsgId,
       isSeen: messageData.isSeen,
       isTyping: messageData.isTyping,
-      recipientId: messageData.recipientId, // Assign recipientId
+      recipientId: messageData.recipientId,
       timestamp: messageData.timestamp,
+      messageId: messageData.messageId, // Assign _id from Hive data
     );
   }
 
@@ -41,11 +47,14 @@ class MessageData {
     return MessageData(
       senderId: map['senderId'] as String,
       message: map['message'] as String,
+      messageId: map['messageId'] as String,
       name: map['name'] as String,
+      repliedMsgId: map['repliedMsgId'] as String,
       avater: map['avater'] as String?,
       isSeen: map['isSeen'] as bool,
       isTyping: map['isTyping'] as bool,
-      recipientId: map['recipientId'] ?? HiveService.instance.userData?.id??'', // Map recipientId
+      recipientId:
+          map['recipientId'] ?? HiveService.instance.userData?.id ?? '',
       timestamp: DateTime.parse(map['timestamp'] as String),
     );
   }
@@ -59,8 +68,10 @@ class MessageData {
       'avater': avater,
       'isSeen': isSeen,
       'isTyping': isTyping,
-      'recipientId': recipientId, // Add recipientId to JSON
+      'repliedMsgId': repliedMsgId,
+      'recipientId': recipientId,
       'timestamp': timestamp.toIso8601String(),
+      'messageId': messageId, // Add _id to JSON
     };
   }
 
@@ -72,9 +83,11 @@ class MessageData {
       name: name,
       avater: avater,
       isSeen: isSeen,
+      repliedMsgId : repliedMsgId,
       isTyping: isTyping,
-      recipientId: recipientId, // Add recipientId to Hive data
+      recipientId: recipientId,
       timestamp: timestamp,
+      messageId: messageId, // Pass _id to Hive data
     );
   }
 }
