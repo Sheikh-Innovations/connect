@@ -20,6 +20,7 @@ class HomeController extends GetxController implements GetxService {
   var inboxMessages = <MessageData>[].obs; // Observable for messages
 
   var roomMessages = <MessageData>[].obs;
+  var unReadMessages = <MessageData>[].obs;
   var availReceiveSoundId = ''.obs;
   late AudioPlayer _audioPlayer;
   late io.Socket socket;
@@ -34,10 +35,10 @@ class HomeController extends GetxController implements GetxService {
       var data = await HiveService.instance.getInboxMessages();
       inboxMessages.value = data.map((message) {
         senderIds.add(message.senderId);
-        listenOnlineUser();
+
         return MessageData.fromMessageData(message);
       }).toList();
-
+      getUnreadMessage();
       update();
     } catch (e) {
       // Handle errors if any, e.g. print or log them
@@ -45,6 +46,24 @@ class HomeController extends GetxController implements GetxService {
         print('Error fetching inbox messages: $e');
       }
     }
+  }
+
+  getUnreadMessage() async {
+    var data = await HiveService.instance.getAllUnseenMessages();
+    unReadMessages.value = data.map((message) {
+      print(message.isSeen);
+
+      return MessageData.fromMessageData(message);
+    }).toList();
+
+    update();
+  }
+
+  int getUnreadCount(String senderId) {
+    // Filter unread messages based on senderId
+    return unReadMessages
+        .where((message) => message.senderId == senderId && !message.isSeen)
+        .length;
   }
 
   Future<void> saveMessages(MessageHiveData message) async {
@@ -158,7 +177,8 @@ class HomeController extends GetxController implements GetxService {
   }
 
   // Function to emit message data
-  void sendMessage(String recipientId, String message, [String repliedMsgId = "false"]) {
+  void sendMessage(String recipientId, String message,
+      [String repliedMsgId = "false"]) {
     final msgId = generateHexId();
     final data = {
       "recipientId": recipientId,
@@ -172,7 +192,7 @@ class HomeController extends GetxController implements GetxService {
     socket.emit('message', jsonData);
 
     final receivedData = MessageData.fromMap(MessageData(
-            isSeen: false,
+            isSeen: true,
             isTyping: false,
             message: message,
             messageId: msgId,
@@ -205,6 +225,7 @@ class HomeController extends GetxController implements GetxService {
   void onInit() {
     super.onInit();
     connectSocket();
+    listenOnlineUser();
     getInbox();
   }
 
@@ -249,6 +270,20 @@ class HomeController extends GetxController implements GetxService {
 
   void updateAvailsoundId(String value) {
     availReceiveSoundId.value = value; // Update the search text
+
+    update();
+  }
+
+  void markAsRead(String senderId) async {
+    final data = {"recipientId": senderId};
+    final unRead = getUnreadCount(senderId);
+    String jsonData = jsonEncode(data);
+    if (unRead != 0) {
+      socket.emit("messageSeen", jsonData);
+      await HiveService.instance.markAllMessagesAsSeen();
+      unReadMessages.clear();
+  
+    }
 
     update();
   }

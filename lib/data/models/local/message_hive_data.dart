@@ -18,7 +18,7 @@ class MessageHiveData {
   final String? avater;
 
   @HiveField(4)
-  final bool isSeen;
+  bool isSeen;
 
   @HiveField(5)
   final bool isTyping;
@@ -37,7 +37,7 @@ class MessageHiveData {
     required this.message,
     required this.name,
     this.avater,
-    required this.isSeen,
+    this.isSeen = false,
     required this.isTyping,
     required this.repliedMsgId,
     required this.messageId, // Add required _id field

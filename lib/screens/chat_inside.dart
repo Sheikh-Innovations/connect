@@ -34,6 +34,7 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
       final controller = Get.find<HomeController>();
       controller.getRoomMessage(widget.senderId);
       controller.updateAvailsoundId(widget.senderId);
+      controller.markAsRead(widget.senderId);
     });
   }
 

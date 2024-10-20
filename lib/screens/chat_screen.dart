@@ -36,8 +36,8 @@ class ChatScreenConnect extends StatelessWidget {
                     ctr.inboxMessages[index].name,
                     ctr.isTypingCheck(ctr.inboxMessages[index].senderId) ==true? "Typing..": ctr.inboxMessages[index].message,
                     ctr.inboxMessages[index].timestamp,
-                    ctr.isOnline(ctr.inboxMessages[index].senderId)
-                    
+                    ctr.isOnline(ctr.inboxMessages[index].senderId,),
+                    ctr.getUnreadCount(ctr.inboxMessages[index].senderId,)
                     ),
               ),
             );

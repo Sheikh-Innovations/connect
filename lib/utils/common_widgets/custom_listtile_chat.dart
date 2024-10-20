@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:velocity_x/velocity_x.dart';
 
 ///@description:Custom ListTile Style for Chat Tile
 ///@param: last message,name,time
 Widget customListTileChat(BuildContext context, String name, String msg,
-    DateTime time, bool isOnline) {
+    DateTime time, bool isOnline, int getUnreadCount) {
   double height = MediaQuery.sizeOf(context).height;
   double width = MediaQuery.sizeOf(context).width;
 
@@ -53,7 +54,34 @@ Widget customListTileChat(BuildContext context, String name, String msg,
     ),
     title: name.text.make(), //User Name You can Make param for this
     subtitle: limitTo22Characters(msg).text.make(), //user last message
-    trailing: formatCurrentTime(time).text.make(), //time of sending
+    trailing: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (getUnreadCount == 0)
+          SizedBox(
+            height: 15.h,
+          ),
+        formatCurrentTime(time).text.make(),
+        if (getUnreadCount != 0)
+          Container(
+              height: 18.w,
+              width: 18.w,
+              decoration: const BoxDecoration(
+                color: Colors.purple, // Background color
+                shape: BoxShape.circle, // Make it circular
+              ),
+              child: Center(
+                child: Text(
+                  "$getUnreadCount",
+                  style: TextStyle(
+                    color: Colors.white, // Text color
+                    fontWeight: FontWeight.bold, // Text weight
+                    fontSize: 8.sp, // Text size
+                  ),
+                ),
+              ))
+      ],
+    ), //time of sending
   ).box.size(width, height * 0.09).make();
 }
 
