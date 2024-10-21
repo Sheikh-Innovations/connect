@@ -11,6 +11,7 @@ import 'package:connect/utils/consts/asset_const.dart';
 import 'package:connect/utils/notification_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'package:get/get.dart';
 import 'package:just_audio/just_audio.dart';
@@ -98,7 +99,7 @@ class HomeController extends GetxController implements GetxService {
           recipientId: message.recipientId,
           isSeen: message.isSeen,
           isTyping: message.isTyping,
-          timestamp: DateTime.now()));
+          timestamp: message.timestamp.toLocal()));
       getInbox();
       update();
     } catch (e) {
@@ -134,12 +135,34 @@ class HomeController extends GetxController implements GetxService {
         await HiveService.instance
             .editMessageById(msgId, newContent, timestamp);
         getRoomMessage(senderId);
-        getInbox();
+
+        int index = findMessageIndexById(msgId);
+
+// Check if the message is the last in the list
+        bool isLastMessage = index == roomMessages.length - 1;
+
+        if (isLastMessage) {
+          HiveService.instance
+              .updateMessageProperty(senderId: senderId, message: newContent);
+
+          getInbox();
+        }
+
+        //     .updateMessageProperty(senderId: senderId, message: newContent);
       } else {
         await HiveService.instance.removeMessage(msgId);
-
         getRoomMessage(senderId);
-        getInbox();
+        int index = findMessageIndexById(msgId);
+
+// Check if the message is the last in the list
+        bool isLastMessage = index == roomMessages.length - 1;
+
+        if (isLastMessage) {
+          HiveService.instance.updateMessageProperty(
+              senderId: senderId, message: 'Content is unsent');
+
+          getInbox();
+        }
       }
 
       update();
@@ -149,6 +172,10 @@ class HomeController extends GetxController implements GetxService {
         print('Error fetching inbox messages: $e');
       }
     }
+  }
+
+  int findMessageIndexById(String messageId) {
+    return roomMessages.indexWhere((message) => message.messageId == messageId);
   }
 
   Future<void> markAsUnReadBySenderAndReceipent(String senderId) async {
@@ -170,7 +197,7 @@ class HomeController extends GetxController implements GetxService {
       var data = await HiveService.instance.getMessagesForRoom(
           senderId, HiveService.instance.userData?.id ?? '');
       roomMessages.value = data.map((message) {
-        print(message.messageId);
+        print(message.timestamp);
         return MessageData.fromMessageData(message);
       }).toList();
 
@@ -393,9 +420,10 @@ class HomeController extends GetxController implements GetxService {
     final data = {"recipientId": senderId};
     final unRead = getUnreadCount(senderId);
     String jsonData = jsonEncode(data);
+
+    socket.emit("messageSeen", jsonData);
+    await HiveService.instance.markMessagesAsSeenBySender(senderId);
     if (unRead != 0) {
-      socket.emit("messageSeen", jsonData);
-      await HiveService.instance.markMessagesAsSeenBySender(senderId);
       unReadMessages.clear();
     }
 
@@ -445,31 +473,41 @@ class HomeController extends GetxController implements GetxService {
     return isTyping.contains(idToCheck);
   }
 
+  void copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    print('Copied to clipboard: $text');
+  }
+
   String calculateLastSeenDurationString(String senderId) {
     try {
-      // Find the entry for the given senderId in the observable list
-      final lastSeenEntry = lastSeenUsrs.firstWhere(
-        (entry) => entry.senderId == senderId,
-      );
+      // Use where to filter the list for entries that match the senderId
+      final matchingEntries =
+          lastSeenUsrs.where((entry) => entry.senderId == senderId);
 
-      if (lastSeenEntry.senderId.isNotEmpty) {
-        DateTime lastSeenTime =
-            lastSeenEntry.seenAt; // Assuming seenAt is a DateTime
-        DateTime currentTime = DateTime.now();
-
-        // Calculate the duration
-        Duration duration = currentTime.difference(lastSeenTime);
-
-        // Format the duration as a string
-        String durationString = _formatDuration(duration);
-        if (isOnline(senderId)) {
-          return 'Online';
-        } else {
-          // Return the formatted string
-          return 'Last seen: $durationString ago';
-        }
-      } else {
+      // If no matching entries are found, return a default message
+      if (matchingEntries.isEmpty) {
         return 'No last seen';
+      }
+
+      // Get the first matching entry
+      final lastSeenEntry = matchingEntries.first;
+
+      DateTime lastSeenTime =
+          lastSeenEntry.seenAt; // Assuming seenAt is a DateTime
+      DateTime currentTime = DateTime.now();
+
+      // Calculate the duration
+      Duration duration = currentTime.difference(lastSeenTime);
+
+      // Format the duration as a string
+      String durationString = _formatDuration(duration);
+
+      // Check if the user is currently online
+      if (isOnline(senderId)) {
+        return 'Online';
+      } else {
+        // Return the formatted last seen time
+        return 'Last seen: $durationString ago';
       }
     } catch (e) {
       // Handle errors if any

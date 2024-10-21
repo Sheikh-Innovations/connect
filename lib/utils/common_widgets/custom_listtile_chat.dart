@@ -52,7 +52,10 @@ Widget customListTileChat(BuildContext context, String name, String msg,
         ),
       ],
     ),
-    title: name.text.make(), //User Name You can Make param for this
+    title: name.text.textStyle(const TextStyle(
+
+      fontWeight: FontWeight.bold
+    )).make(), //User Name You can Make param for this
     subtitle: limitTo22Characters(msg).text.make(), //user last message
     trailing: Column(
       mainAxisAlignment: MainAxisAlignment.center,

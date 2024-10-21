@@ -1,5 +1,6 @@
 import 'package:connect/data/providers/hive_service.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -7,21 +8,36 @@ void showEditDeleteModal(
     {required BuildContext context,
     required VoidCallback onEdit,
     required VoidCallback onDelete,
+    required VoidCallback onCopy,
     required String senderId}) {
   showCupertinoModalPopup(
     context: context,
     builder: (BuildContext context) {
       return CupertinoActionSheet(
-        title: Text(
-          'Select Action Type',
-          style: TextStyle(fontSize: 16.sp),
-        ),
+        // message: Text(
+        //   'Choose Your Action'.toUpperCase(),
+        //   style: TextStyle(fontSize: 16.sp, color: Colors.black),
+        // ),
         actions: [
+       
+          CupertinoActionSheetAction(
+            onPressed: onCopy,
+            child: Text('Copy', style: TextStyle(fontSize: 16.sp)),
+          ),
+
+           if (senderId == HiveService.instance.userData?.id)
+           SizedBox(
+            height: 5.h,
+          ),
           if (senderId == HiveService.instance.userData?.id)
             CupertinoActionSheetAction(
               onPressed: onEdit,
-              child: Text('Edit ', style: TextStyle(fontSize: 16.sp)),
+              child: Text('Edit', style: TextStyle(fontSize: 16.sp)),
             ),
+          
+          SizedBox(
+            height: 5.h,
+          ),
           CupertinoActionSheetAction(
             onPressed: onDelete,
             child: Text('Remove', style: TextStyle(fontSize: 16.sp)),

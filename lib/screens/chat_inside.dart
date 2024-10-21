@@ -10,6 +10,7 @@ import 'package:connect/utils/common_widgets/message_send_custom_desing.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -78,6 +79,8 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
   bool _lastTypingState = false;
 
   bool isEditAction = false;
+
+  bool isLastMessageForSen = false;
   MessageData? currentMessageForSend;
   @override
   Widget build(BuildContext context) {
@@ -181,6 +184,7 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
 
                     return GestureDetector(
                       onLongPress: () {
+                        HapticFeedback.vibrate();
                         showEditDeleteModal(
                             context: context,
                             onDelete: () {
@@ -199,22 +203,39 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
                                     newContent: "Unsent",
                                     timestamp: DateTime.now());
 
+                                if (isLastMessage) {
+                                  HiveService.instance.updateMessageProperty(
+                                      senderId: currentMessage.recipientId,
+                                      message: 'Content is unsent');
+                                }
+
                                 Navigator.pop(context);
                               } else {
                                 controller.deleteAndEditMessageById(
                                     msgId: currentMessage.messageId,
-                                    senderId: currentMessage.recipientId,
+                                    senderId: currentMessage.senderId,
                                     actionType: "delete",
                                     newContent: "Unsent",
                                     timestamp: DateTime.now());
+                                if (isLastMessage) {
+                                  HiveService.instance.updateMessageProperty(
+                                      senderId: currentMessage.senderId,
+                                      message: 'Content is deleted');
+                                }
 
                                 Navigator.pop(context);
                               }
+                            },
+                            onCopy: () {
+                              controller
+                                  .copyToClipboard(currentMessage.message);
+                              Navigator.pop(context);
                             },
                             onEdit: () {
                               textCtr.text = currentMessage.message;
                               currentMessageForSend = currentMessage;
                               isEditAction = true;
+                              isLastMessageForSen = isLastMessage;
                               Navigator.pop(context);
                             },
                             senderId: currentMessage.senderId);
@@ -265,10 +286,19 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
                         actionType: "edit",
                         newContent: textCtr.text,
                         timestamp: DateTime.now());
+                    if (isLastMessageForSen) {
+                      HiveService.instance.updateMessageProperty(
+                          senderId: currentMessageForSend?.recipientId ?? '',
+                          message: textCtr.text);
+                      controller.getInbox();
+                    }
+                    isEditAction = false;
                     textCtr.clear();
                   } else {
-                    ctr.sendMessage(widget.senderId, textCtr.text);
-                    textCtr.clear();
+                    if (textCtr.text.isNotEmpty) {
+                      ctr.sendMessage(widget.senderId, textCtr.text);
+                      textCtr.clear();
+                    }
                   }
                 },
                 onChanged: _onTextChanged),
@@ -404,9 +434,9 @@ class ChatBubble extends StatelessWidget {
 }
 
 String getChatDayTime(DateTime dateTime) {
-  DateTime now = DateTime.now();
-  DateTime yesterday = now.subtract(const Duration(days: 1));
-  DateTime localDateTime = dateTime;
+  DateTime now = DateTime.now().toLocal();
+  DateTime yesterday = now.subtract(const Duration(days: 1)).toLocal();
+  DateTime localDateTime = dateTime.toLocal();
 
   if (localDateTime.day == now.day &&
       localDateTime.month == now.month &&
@@ -472,7 +502,7 @@ String dateConverterMonth(String string) {
 
 bool isSameDay(DateTime nowTime, DateTime priviesTime) {
   DateTime now = nowTime.toLocal();
-  DateTime privies = priviesTime;
+  DateTime privies = priviesTime.toLocal();
   if (now.day == privies.day &&
       now.month == privies.month &&
       now.year == privies.year) {
