@@ -9,7 +9,7 @@ class MessageHiveData {
   final String senderId;
 
   @HiveField(1)
-  final String message;
+  String message;
 
   @HiveField(2)
   final String name;
@@ -24,7 +24,7 @@ class MessageHiveData {
   final bool isTyping;
 
   @HiveField(6)
-  final DateTime timestamp;
+  DateTime timestamp;
 
   @HiveField(7) // Add this line for recipientId
   final String recipientId; // New field for recipientId

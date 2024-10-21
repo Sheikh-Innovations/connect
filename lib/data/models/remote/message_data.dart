@@ -90,4 +90,32 @@ class MessageData {
       messageId: messageId, // Pass _id to Hive data
     );
   }
+
+
+   // Add the copyWith method
+  MessageData copyWith({
+    String? senderId,
+    String? message,
+    String? name,
+    String? avater,
+    bool? isSeen,
+    bool? isTyping,
+    String? recipientId,
+    DateTime? timestamp,
+    String? repliedMsgId,
+    String? messageId,
+  }) {
+    return MessageData(
+      senderId: senderId ?? this.senderId,
+      message: message ?? this.message,
+      name: name ?? this.name,
+      avater: avater ?? this.avater,
+      isSeen: isSeen ?? this.isSeen,
+      isTyping: isTyping ?? this.isTyping,
+      recipientId: recipientId ?? this.recipientId,
+      timestamp: timestamp ?? this.timestamp,
+      repliedMsgId: repliedMsgId ?? this.repliedMsgId,
+      messageId: messageId ?? this.messageId,
+    );
+  }
 }

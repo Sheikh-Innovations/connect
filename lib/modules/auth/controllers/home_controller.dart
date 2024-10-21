@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:connect/data/models/local/message_hive_data.dart';
+import 'package:connect/data/models/remote/edit_remove.dart';
+import 'package:connect/data/models/remote/last_seen.dart';
 import 'package:connect/data/models/remote/message_data.dart';
 import 'package:connect/data/providers/hive_service.dart';
 import 'package:connect/utils/consts/api_const.dart';
@@ -25,9 +27,9 @@ class HomeController extends GetxController implements GetxService {
   late AudioPlayer _audioPlayer;
   late io.Socket socket;
   var senderIds = [].obs;
-
+  var isVisiblity = false.obs;
   var onlineUsers = [].obs;
-
+  var lastSeenUsrs = <LasSeenEntry>[].obs;
   var isTyping = <String>[].obs; // List to store typing users (observable)
 
   Future<void> getInbox() async {
@@ -35,6 +37,7 @@ class HomeController extends GetxController implements GetxService {
       var data = await HiveService.instance.getInboxMessages();
       inboxMessages.value = data.map((message) {
         senderIds.add(message.senderId);
+        listenOnlineUser();
 
         return MessageData.fromMessageData(message);
       }).toList();
@@ -48,11 +51,28 @@ class HomeController extends GetxController implements GetxService {
     }
   }
 
+  Future<void> getLastSeen() async {
+    try {
+      // Fetch the data from the Hive box
+      var data = await HiveService.instance.getSeenMessages();
+
+      // Map the data to `lastSeenUsrs`
+      lastSeenUsrs.value = data.map((message) {
+        return LasSeenEntry.fromSeenMessage(message);
+      }).toList();
+
+      update();
+    } catch (e) {
+      // Handle errors
+      if (kDebugMode) {
+        print('Error fetching last seen messages: $e');
+      }
+    }
+  }
+
   getUnreadMessage() async {
     var data = await HiveService.instance.getAllUnseenMessages();
     unReadMessages.value = data.map((message) {
-      print(message.isSeen);
-
       return MessageData.fromMessageData(message);
     }).toList();
 
@@ -89,11 +109,68 @@ class HomeController extends GetxController implements GetxService {
     }
   }
 
+  Future<void> saveLastSeen(LasSeenEntry data) async {
+    try {
+      await HiveService.instance.saveSeenMessage(data);
+      lastSeenUsrs.add(data);
+      getLastSeen();
+      update();
+    } catch (e) {
+      // Handle errors if any, e.g. print or log them
+      if (kDebugMode) {
+        print('Error fetching last seen: $e');
+      }
+    }
+  }
+
+  Future<void> deleteAndEditMessageById(
+      {required String msgId,
+      required String senderId,
+      required String actionType,
+      required String newContent,
+      required DateTime timestamp}) async {
+    try {
+      if (actionType == "edit") {
+        await HiveService.instance
+            .editMessageById(msgId, newContent, timestamp);
+        getRoomMessage(senderId);
+        getInbox();
+      } else {
+        await HiveService.instance.removeMessage(msgId);
+
+        getRoomMessage(senderId);
+        getInbox();
+      }
+
+      update();
+    } catch (e) {
+      // Handle errors if any, e.g. print or log them
+      if (kDebugMode) {
+        print('Error fetching inbox messages: $e');
+      }
+    }
+  }
+
+  Future<void> markAsUnReadBySenderAndReceipent(String senderId) async {
+    try {
+      await HiveService.instance.markMessagesAsSeenBySenderAndRecipient(
+          senderId, HiveService.instance.userData?.id ?? '');
+      getRoomMessage(senderId);
+      update();
+    } catch (e) {
+      // Handle errors if any, e.g. print or log them
+      if (kDebugMode) {
+        print('Error fetching inbox messages: $e');
+      }
+    }
+  }
+
   Future<void> getRoomMessage(String senderId) async {
     try {
       var data = await HiveService.instance.getMessagesForRoom(
           senderId, HiveService.instance.userData?.id ?? '');
       roomMessages.value = data.map((message) {
+        print(message.messageId);
         return MessageData.fromMessageData(message);
       }).toList();
 
@@ -124,7 +201,6 @@ class HomeController extends GetxController implements GetxService {
     });
 
     socket.on('message', (data) {
-      print('Received message from WebSocket: ${data}');
       final receivedData = MessageData.fromMap(data);
 
       saveMessages(receivedData.toHiveData());
@@ -136,6 +212,29 @@ class HomeController extends GetxController implements GetxService {
       // Handle the received message as needed
     });
 
+    socket.on('messageSeen', (data) {
+      final receivedData = LasSeenEntry.fromMap(data);
+      markAsUnReadBySenderAndReceipent(receivedData.senderId);
+      saveLastSeen(receivedData);
+      if (kDebugMode) {
+        print('Received message from WebSocket: ${receivedData.senderId}');
+      }
+      // Handle the received message as needed
+    });
+
+    socket.on('messageUpdated', (data) {
+      final updatedData = EditRemoveRspnse.fromMap(data);
+      deleteAndEditMessageById(
+          msgId: updatedData.messageId,
+          senderId: updatedData.senderId,
+          actionType: updatedData.eventType,
+          newContent: updatedData.newContent,
+          timestamp: updatedData.timestamp);
+      if (kDebugMode) {
+        print('Received message from WebSocket: ${updatedData.messageId}');
+      }
+      // Handle the received message as needed
+    });
     // Listen for 'typing' event from socket
     socket.on('typing', (data) {
       // Parse the data into TypingStatus model
@@ -192,7 +291,7 @@ class HomeController extends GetxController implements GetxService {
     socket.emit('message', jsonData);
 
     final receivedData = MessageData.fromMap(MessageData(
-            isSeen: true,
+            isSeen: false,
             isTyping: false,
             message: message,
             messageId: msgId,
@@ -216,17 +315,28 @@ class HomeController extends GetxController implements GetxService {
 
   requestOnline() {
     String jsonData = jsonEncode(senderIds);
+
     if (senderIds.isNotEmpty) {
       socket.emit('checkOnline', jsonData);
     }
   }
 
-  @override
-  void onInit() {
-    super.onInit();
-    connectSocket();
-    listenOnlineUser();
-    getInbox();
+  removeAndEditEmit(
+      {required String recipientId,
+      required String messageId,
+      required String eventType,
+      required String newContent}) {
+    final data = {
+      "recipientId": recipientId,
+      "messageId": messageId,
+      "eventType": eventType,
+      "newContent": newContent
+    };
+
+    String jsonData = jsonEncode(data);
+    if (recipientId.isNotEmpty && recipientId.isNotEmpty) {
+      socket.emit('messageUpdated', jsonData);
+    }
   }
 
   void updateSearchText(String value) {
@@ -256,6 +366,11 @@ class HomeController extends GetxController implements GetxService {
     }
   }
 
+  updateVisibity(bool value) {
+    isVisiblity.value = value;
+    update();
+  }
+
   Future<void> playSound(String soundPath) async {
     _audioPlayer = AudioPlayer();
     try {
@@ -274,15 +389,14 @@ class HomeController extends GetxController implements GetxService {
     update();
   }
 
-  void markAsRead(String senderId) async {
+  void markAsReadBySenderId(String senderId) async {
     final data = {"recipientId": senderId};
     final unRead = getUnreadCount(senderId);
     String jsonData = jsonEncode(data);
     if (unRead != 0) {
       socket.emit("messageSeen", jsonData);
-      await HiveService.instance.markAllMessagesAsSeen();
+      await HiveService.instance.markMessagesAsSeenBySender(senderId);
       unReadMessages.clear();
-  
     }
 
     update();
@@ -315,6 +429,10 @@ class HomeController extends GetxController implements GetxService {
     socket.on('onlineUsers', (data) {
       onlineUsers.value =
           List<String>.from(data); // Update the online users list
+
+      if (kDebugMode) {
+        print('Online user $onlineUsers');
+      }
       update(); // Notify listeners to rebuild the UI
     });
   }
@@ -325,6 +443,62 @@ class HomeController extends GetxController implements GetxService {
 
   bool isTypingCheck(String idToCheck) {
     return isTyping.contains(idToCheck);
+  }
+
+  String calculateLastSeenDurationString(String senderId) {
+    try {
+      // Find the entry for the given senderId in the observable list
+      final lastSeenEntry = lastSeenUsrs.firstWhere(
+        (entry) => entry.senderId == senderId,
+      );
+
+      if (lastSeenEntry.senderId.isNotEmpty) {
+        DateTime lastSeenTime =
+            lastSeenEntry.seenAt; // Assuming seenAt is a DateTime
+        DateTime currentTime = DateTime.now();
+
+        // Calculate the duration
+        Duration duration = currentTime.difference(lastSeenTime);
+
+        // Format the duration as a string
+        String durationString = _formatDuration(duration);
+        if (isOnline(senderId)) {
+          return 'Online';
+        } else {
+          // Return the formatted string
+          return 'Last seen: $durationString ago';
+        }
+      } else {
+        return 'No last seen';
+      }
+    } catch (e) {
+      // Handle errors if any
+      if (kDebugMode) {
+        print('Error calculating last seen duration: $e');
+      }
+      return 'Error calculating duration';
+    }
+  }
+
+// Helper function to format the Duration into a readable string
+  String _formatDuration(Duration duration) {
+    if (duration.inMinutes < 1) {
+      return '${duration.inSeconds} seconds';
+    } else if (duration.inHours < 1) {
+      return '${duration.inMinutes} minutes';
+    } else if (duration.inDays < 1) {
+      return '${duration.inHours} hours';
+    } else {
+      return '${duration.inDays} days';
+    }
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    connectSocket();
+    getInbox();
+    getLastSeen();
   }
 
   @override

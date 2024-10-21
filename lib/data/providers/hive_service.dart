@@ -1,4 +1,6 @@
+import 'package:connect/data/models/local/last_seen.dart';
 import 'package:connect/data/models/local/message_hive_data.dart';
+import 'package:connect/data/models/remote/last_seen.dart';
 import 'package:connect/modules/auth/views/login_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
@@ -19,24 +21,31 @@ class HiveService {
   // Box names
   final String _boxName = 'userBox';
   final String _roomBox = 'messageRoomBox';
+
   final String _inboxBox = 'inboxBox';
+
+  final String _lastSeenBox = 'lasSeenBox';
 
   // Cached box references
   Box<UserHiveData>? _userBox;
   Box<MessageHiveData>? _roomBoxInstance;
   Box<MessageHiveData>? _inboxBoxInstance;
 
+  Box<SeenMessage>? _lastSeenInstance;
+
   // Initialize Hive and open the box
   Future<void> boxInit() async {
     _userBox = await Hive.openBox<UserHiveData>(_boxName);
     _roomBoxInstance = await Hive.openBox<MessageHiveData>(_roomBox);
     _inboxBoxInstance = await Hive.openBox<MessageHiveData>(_inboxBox);
+    _lastSeenInstance = await Hive.openBox<SeenMessage>(_lastSeenBox);
   }
 
   // Ensure this is called before using Hive
   Future<void> adapterInit() async {
     Hive.registerAdapter(UserHiveDataAdapter());
     Hive.registerAdapter(MessageHiveDataAdapter());
+    Hive.registerAdapter(SeenMessageAdapter());
   }
 
   // Save user data
@@ -153,16 +162,154 @@ class HiveService {
 
   // Update all unseen messages to be marked as seen
 
-  Future<void> markAllMessagesAsSeen() async {
+  Future<void> markMessagesAsSeenBySender(String senderId) async {
     // Open the Hive box
     var box =
         _roomBoxInstance ??= await Hive.openBox<MessageHiveData>(_roomBox);
-    // Iterate through each message and update the isSeen property
+
+    // Iterate through each message and update the isSeen property for the given senderId
     for (var key in box.keys) {
       var message = box.get(key);
-      if (message != null && !message.isSeen) {
-        message.isSeen = true; // Set isSeen to true
+      if (message != null && message.senderId == senderId && !message.isSeen) {
+        message.isSeen = true; // Set isSeen to true for the specific senderId
         await box.put(key, message); // Update the message in the box
+      }
+    }
+  }
+
+  Future<void> markMessagesAsSeenBySenderAndRecipient(
+      String senderId, String recipientId) async {
+    // Open the Hive box
+    var box =
+        _roomBoxInstance ??= await Hive.openBox<MessageHiveData>(_roomBox);
+    var data = box.keys.where((key) {
+      var message = box.get(key);
+      return (message?.recipientId == senderId) &&
+          (message?.senderId == recipientId) &&
+          (message?.isSeen == false);
+    }).toList();
+
+    // Iterate through each message and update the isSeen property for the given senderId
+    for (var key in data) {
+      var message = box.get(key);
+      message?.isSeen = true; // Set isSeen to true
+      // Update the box with the modified message
+      await box.put(key, message!);
+    }
+
+    if (kDebugMode) {
+      print("Messages have been updated.");
+    }
+  }
+
+  Future<void> saveSeenMessage(LasSeenEntry data) async {
+    var box =
+        _lastSeenInstance ??= await Hive.openBox<SeenMessage>(_lastSeenBox);
+
+    // Find if the senderId already exists
+    final existingMessages = box.values.where(
+      (message) => message.senderId == data.senderId,
+    );
+
+    if (existingMessages.isNotEmpty) {
+      // If exists, update the seenAt field
+      final existingMessage = existingMessages.first; // Get the first match
+      final updatedMessage = SeenMessage(
+        senderId: existingMessage.senderId,
+        seenAt: data.seenAt,
+      );
+      await box.put(existingMessage.key,
+          updatedMessage); // Use the key to update the message
+
+      if (kDebugMode) {
+        print('Updated existing message');
+      }
+    } else {
+      // Otherwise, add a new entry
+      final newMessage = SeenMessage(
+        senderId: data.senderId,
+        seenAt: data.seenAt,
+      );
+      await box.add(newMessage); // Add new message
+
+      if (kDebugMode) {
+        print('Added new message');
+      }
+    }
+  }
+
+  Future<List<SeenMessage>> getSeenMessages() async {
+    // Ensure the box is opened
+    var box =
+        _lastSeenInstance ??= await Hive.openBox<SeenMessage>(_lastSeenBox);
+
+    // Check if the box contains any values before retrieving
+    if (box.isEmpty) {
+      if (kDebugMode) {
+        print('No messages found');
+      }
+      return []; // Return an empty list if no messages exist
+    }
+    // Return the list of SeenMessages
+    return box.values.toList();
+  }
+
+  Future<void> removeMessage(String messageId) async {
+    // Ensure the box is opened
+    _roomBoxInstance ??= await Hive.openBox<MessageHiveData>('roomBox');
+
+    // Find the existing message by its ID
+
+    final messageIndex = _roomBoxInstance!.values
+        .toList()
+        .indexWhere((msg) => msg.messageId == messageId);
+    if (messageIndex != -1) {
+      await _roomBoxInstance!.deleteAt(messageIndex); // Remove the message
+      print('Message deleted successfully: $messageId');
+    } else {
+      print('Message not found: $messageId');
+    }
+  }
+
+  // Edit a message by ID
+  Future<void> editMessageById(
+      String messageId, String newContent, DateTime timestamp) async {
+    var box =
+        _roomBoxInstance ??= await Hive.openBox<MessageHiveData>(_roomBox);
+
+    // Find the index of the existing message
+    final existingIndex = box.values.toList().indexWhere(
+          (message) => message.messageId == messageId,
+        );
+
+    if (existingIndex != -1) {
+      // If exists, update the message
+      final existingMessage = box.getAt(existingIndex);
+
+      // Create a new MessageHiveData with updated content
+      final updatedMessage = MessageHiveData(
+        message: newContent,
+        isTyping: existingMessage!.isTyping,
+        isSeen: existingMessage.isSeen,
+        senderId: existingMessage.senderId,
+        repliedMsgId: existingMessage.repliedMsgId,
+        recipientId: existingMessage.recipientId,
+        avater: existingMessage.avater,
+        timestamp: timestamp,
+        name: existingMessage.name,
+        messageId: messageId,
+      );
+
+      // Use the index to update the message in the box
+      await box.putAt(existingIndex,
+          updatedMessage); // Update the message at the found index
+
+      if (kDebugMode) {
+        print('Updated existing message');
+      }
+    } else {
+      if (kDebugMode) {
+        print('Message with ID $messageId not found for editing');
       }
     }
   }

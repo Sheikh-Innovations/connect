@@ -1,3 +1,4 @@
+import 'package:connect/modules/auth/controllers/home_controller.dart';
 import 'package:connect/modules/auth/views/available_contacts.dart';
 import 'package:connect/utils/consts/color_const.dart';
 import 'package:connect/utils/common_widgets/tab_bar.dart';
@@ -75,8 +76,9 @@ class HomeScreen extends StatelessWidget {
 
                     GestureDetector(
                       onTap: () {
-                     
-       
+                        // Get.find<HomeController>()
+                        //     .markAsUnReadBySenderAndReceipent(
+                        //         '6705812dcec39154109171bb');
 
                         // // WIll take to notification sccreen
                         // Get.to(() => const NotificationScreen());
