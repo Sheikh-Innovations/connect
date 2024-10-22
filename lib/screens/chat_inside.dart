@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:connect/data/models/remote/message_data.dart';
 import 'package:connect/data/providers/hive_service.dart';
 import 'package:connect/modules/auth/controllers/home_controller.dart';
 import 'package:connect/utils/common_widgets/modal_bottom_sheet.dart';
+import 'package:connect/utils/common_widgets/reply_to.dart';
 import 'package:connect/utils/consts/color_const.dart';
 import 'package:connect/utils/common_widgets/message_send_custom_desing.dart';
 
@@ -13,7 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+
 import 'package:velocity_x/velocity_x.dart';
 
 ///@Description: This Is Chat Screen Of Users.
@@ -243,6 +245,17 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
                       child: ChatBubble(
                         message: Message(
                             isSameDay: showDate,
+                            senderName: widget.name,
+
+                            replyTo:  ctr.roomMessages[reversedIndex].replyTo,
+                            senderId: ctr.roomMessages[reversedIndex].senderId,
+                            recipientId:
+                                ctr.roomMessages[reversedIndex].recipientId,
+                            name: ctr.roomMessages[reversedIndex].name,
+                            repliedMsgId:
+                                ctr.roomMessages[reversedIndex].repliedMsgId,
+                            messageId:
+                                ctr.roomMessages[reversedIndex].messageId,
                             timestamp:
                                 ctr.roomMessages[reversedIndex].timestamp,
                             isLastMessage: isLastMessage,
@@ -269,6 +282,7 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
 
             /// ---> UI part of Sendign Messaging TextFiled <--- ///
             onMessageSendButton(
+                messageId: currentMessageForSend?.messageId ?? '',
                 focusNode: focusNode, // Pass the FocusNode here
                 textCtr: textCtr,
                 onTap: () {
@@ -313,9 +327,18 @@ class _ChatInsideScreenState extends State<ChatInsideScreen> {
 /// ---> Each Message Contains Data of Message , checking isUser or Ai , and Avatar of user <---- ///
 class Message {
   final String text;
+
+  final String name;
+    final String replyTo;
   final bool isUser;
   final bool isSeen;
 
+  final String messageId;
+  final String recipientId;
+  final String repliedMsgId;
+
+  final String senderId;
+  final String senderName;
   final bool isSameDay;
   final bool isLastMessage; // Add this parameter
   final String avatarPath;
@@ -327,7 +350,14 @@ class Message {
       required this.isLastMessage,
       required this.avatarPath,
       required this.timestamp,
+      required this.repliedMsgId,
+      required this.name,
+      required this.senderId,
+      required this.senderName,
+      required this.replyTo,
+      required this.messageId,
       required this.isSameDay,
+      required this.recipientId,
       required this.isSeen});
 }
 
@@ -385,45 +415,128 @@ class ChatBubble extends StatelessWidget {
                 const SizedBox(width: 8),
               ],
               Flexible(
-                child: Column(
-                  crossAxisAlignment: message.isUser
-                      ? CrossAxisAlignment.end
-                      : CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          vertical: 12.h, horizontal: 16.w),
-                      margin: EdgeInsets.only(
-                          bottom: message.isUser
-                              ? message.isLastMessage
-                                  ? 2.h
-                                  : 10.h
-                              : 10.h,
-                          right: 3.w),
-                      constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.6.h),
-                      decoration: BoxDecoration(
-                        color: message.isUser ? primaryColor : blackColor,
-                        borderRadius: borderRadius,
-                      ),
-                      child: Text(
-                        message.text,
-                        style: TextStyle(
-                          color: message.isUser ? whiteColor : whiteColor,
-                          fontSize: 16.h,
+                child: GetBuilder<HomeController>(builder: (ctr) {
+                  return ReplyTo(
+                    isUser: message.isUser,
+                    key: UniqueKey(),
+                    onRightSwipe: (details) {
+                      ctr.updateRepliedMsg(message.messageId,
+                          message.senderName, message.recipientId);
+
+
+                         
+                    },
+                    child: Column(
+                      crossAxisAlignment: message.isUser
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          margin: EdgeInsets.only(
+                              bottom: message.isUser
+                                  ? message.isLastMessage
+                                      ? 2.h
+                                      : 10.h
+                                  : 10.h,
+                              right: 3.w),
+                          constraints: BoxConstraints(
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.6.h),
+                          decoration: BoxDecoration(
+                            color: message.isUser ? primaryColor : blackColor,
+                            borderRadius: borderRadius,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (message.repliedMsgId != "false")
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 8.h, horizontal: 10.w),
+                                  // margin: EdgeInsets.only(bottom: 8.h),
+                                  decoration: BoxDecoration(
+                                      color: message.isUser
+                                          ? primaryColor
+                                          : Colors.grey.shade200,
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(12),
+                                        topRight: Radius.circular(12),
+                                      )),
+                                  child: IntrinsicHeight(
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // Vertical Line
+
+                                        Container(
+                                          // Makes the line expand with the content
+
+                                          width: 4.w,
+
+                                          color: Colors.amber,
+
+                                          margin: EdgeInsets.only(
+                                            right: 8.w,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                message.replyTo,
+                                                style: TextStyle(
+                                                  color: Colors.amber,
+                                                  fontSize: 14.h,
+                                                ),
+                                              ),
+                                              Text(
+                                                ctr.findMessageTextById(
+                                                    message.repliedMsgId),
+                                                style: TextStyle(
+                                                    color: message.isUser
+                                                        ? Colors.white
+                                                        : null),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: 12.h, horizontal: 16.w),
+                                child: Text(
+                                  message.text,
+                                  style: TextStyle(
+                                    color: message.isUser
+                                        ? whiteColor
+                                        : whiteColor,
+                                    fontSize: 16.h,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        if (message.isUser && message.isLastMessage)
+                          Text(
+                            message.isSeen
+                                ? 'Seen'
+                                : 'Delivered', // Status text
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12.h,
+                            ),
+                          ),
+                      ],
                     ),
-                    if (message.isUser && message.isLastMessage)
-                      Text(
-                        message.isSeen ? 'Seen' : 'Delivered', // Status text
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12.h,
-                        ),
-                      ),
-                  ],
-                ),
+                  );
+                }),
               ),
             ],
           ),

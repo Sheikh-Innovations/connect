@@ -11,6 +11,7 @@ class MessageData {
   final String recipientId;
   final DateTime timestamp;
   final String repliedMsgId;
+  final String replyTo;
   final String messageId; // New field for _id
 
   MessageData({
@@ -19,6 +20,7 @@ class MessageData {
     required this.name,
     this.avater,
     required this.isSeen,
+    required this.replyTo,
     required this.isTyping,
     required this.repliedMsgId,
     required this.recipientId,
@@ -35,6 +37,7 @@ class MessageData {
       avater: messageData.avater,
       repliedMsgId: messageData.repliedMsgId,
       isSeen: messageData.isSeen,
+      replyTo: messageData.replyTo,
       isTyping: messageData.isTyping,
       recipientId: messageData.recipientId,
       timestamp: messageData.timestamp,
@@ -51,6 +54,7 @@ class MessageData {
       name: map['name'] as String,
       repliedMsgId: map['repliedMsgId'] as String,
       avater: map['avater'] as String?,
+      replyTo: map['replyTo'] as String ,
       isSeen: map['isSeen'] as bool,
       isTyping: map['isTyping'] as bool,
       recipientId:
@@ -68,6 +72,7 @@ class MessageData {
       'avater': avater,
       'isSeen': isSeen,
       'isTyping': isTyping,
+      'replyTo':replyTo,
       'repliedMsgId': repliedMsgId,
       'recipientId': recipientId,
       'timestamp': timestamp.toIso8601String(),
@@ -83,6 +88,7 @@ class MessageData {
       name: name,
       avater: avater,
       isSeen: isSeen,
+      replyTo: replyTo,
       repliedMsgId : repliedMsgId,
       isTyping: isTyping,
       recipientId: recipientId,
@@ -103,6 +109,7 @@ class MessageData {
     String? recipientId,
     DateTime? timestamp,
     String? repliedMsgId,
+   String? replyTo,
     String? messageId,
   }) {
     return MessageData(
@@ -111,6 +118,7 @@ class MessageData {
       name: name ?? this.name,
       avater: avater ?? this.avater,
       isSeen: isSeen ?? this.isSeen,
+      replyTo: replyTo ?? this.replyTo,
       isTyping: isTyping ?? this.isTyping,
       recipientId: recipientId ?? this.recipientId,
       timestamp: timestamp ?? this.timestamp,

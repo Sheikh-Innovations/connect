@@ -24,6 +24,7 @@ class MessageHiveDataAdapter extends TypeAdapter<MessageHiveData> {
       isSeen: fields[4] as bool,
       isTyping: fields[5] as bool,
       repliedMsgId: fields[9] as String,
+      replyTo: fields[10] as String,
       messageId: fields[8] as String,
       timestamp: fields[6] as DateTime,
       recipientId: fields[7] as String?,
@@ -33,7 +34,7 @@ class MessageHiveDataAdapter extends TypeAdapter<MessageHiveData> {
   @override
   void write(BinaryWriter writer, MessageHiveData obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.senderId)
       ..writeByte(1)
@@ -53,7 +54,9 @@ class MessageHiveDataAdapter extends TypeAdapter<MessageHiveData> {
       ..writeByte(8)
       ..write(obj.messageId)
       ..writeByte(9)
-      ..write(obj.repliedMsgId);
+      ..write(obj.repliedMsgId)
+      ..writeByte(10)
+      ..write(obj.replyTo);
   }
 
   @override

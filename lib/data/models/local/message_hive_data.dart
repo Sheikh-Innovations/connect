@@ -32,6 +32,9 @@ class MessageHiveData {
   final String messageId; // New field for storing the message ID (_id)
   @HiveField(9) // Add this for _id
   final String repliedMsgId;
+  @HiveField(10) // Add this for _id
+  final String replyTo;
+  
   MessageHiveData({
     required this.senderId,
     required this.message,
@@ -40,6 +43,7 @@ class MessageHiveData {
     this.isSeen = false,
     required this.isTyping,
     required this.repliedMsgId,
+    required this.replyTo,
     required this.messageId, // Add required _id field
     required this.timestamp,
     String? recipientId, // Change this line

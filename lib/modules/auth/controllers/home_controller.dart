@@ -32,6 +32,9 @@ class HomeController extends GetxController implements GetxService {
   var onlineUsers = [].obs;
   var lastSeenUsrs = <LasSeenEntry>[].obs;
   var isTyping = <String>[].obs; // List to store typing users (observable)
+  var repliedMsgId = 'false'.obs;
+
+  var repliedName = 'false'.obs;
 
   Future<void> getInbox() async {
     try {
@@ -94,6 +97,7 @@ class HomeController extends GetxController implements GetxService {
           senderId: message.senderId,
           message: message.message,
           name: message.name,
+          replyTo: message.replyTo,
           messageId: message.messageId,
           repliedMsgId: message.repliedMsgId,
           recipientId: message.recipientId,
@@ -197,7 +201,7 @@ class HomeController extends GetxController implements GetxService {
       var data = await HiveService.instance.getMessagesForRoom(
           senderId, HiveService.instance.userData?.id ?? '');
       roomMessages.value = data.map((message) {
-        print(message.timestamp);
+        print(message.messageId);
         return MessageData.fromMessageData(message);
       }).toList();
 
@@ -234,7 +238,7 @@ class HomeController extends GetxController implements GetxService {
       playReceiveMsgSound(receivedData.senderId, receivedData);
 
       if (kDebugMode) {
-        print('Received message from WebSocket: ${receivedData.message}');
+        print('Received message from WebSocket: ${data}');
       }
       // Handle the received message as needed
     });
@@ -303,14 +307,17 @@ class HomeController extends GetxController implements GetxService {
   }
 
   // Function to emit message data
-  void sendMessage(String recipientId, String message,
-      [String repliedMsgId = "false"]) {
+  void sendMessage(
+    String recipientId,
+    String message,
+  ) {
     final msgId = generateHexId();
     final data = {
       "recipientId": recipientId,
       "message": message,
       "messageId": msgId,
-      "repliedMsgId": repliedMsgId
+      "replyTo": repliedName.value == "You" ? "Himself" : repliedName.value,
+      "repliedMsgId": repliedMsgId.value
     };
     // Convert Map to JSON string
     String jsonData = jsonEncode(data);
@@ -322,16 +329,16 @@ class HomeController extends GetxController implements GetxService {
             isTyping: false,
             message: message,
             messageId: msgId,
-            repliedMsgId: repliedMsgId,
+            replyTo: repliedName.value,
+            repliedMsgId: repliedMsgId.value,
             senderId: HiveService.instance.userData?.id ?? '',
             avater: null,
             recipientId: recipientId,
             name: HiveService.instance.userData?.name ?? '',
             timestamp: DateTime.now())
         .toJson());
-
     saveMessages(receivedData.toHiveData());
-
+    repliedMsgId.value = "false";
     playSound(MediaConst.sendMsgSound);
     HiveService.instance
         .updateMessageProperty(senderId: recipientId, message: message);
@@ -475,7 +482,6 @@ class HomeController extends GetxController implements GetxService {
 
   void copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    print('Copied to clipboard: $text');
   }
 
   String calculateLastSeenDurationString(String senderId) {
@@ -529,6 +535,37 @@ class HomeController extends GetxController implements GetxService {
     } else {
       return '${duration.inDays} days';
     }
+  }
+
+  String findMessageTextById(String messageId) {
+    try {
+      // Find the message with the matching messageId
+      final message =
+          roomMessages.firstWhere((message) => message.messageId == messageId);
+      return message.message; // Return the message's text if found
+    } catch (e) {
+      // If no message is found, return a default message or error message
+      return "Message not found";
+    }
+  }
+
+  updateRepliedMsg(String value, String name, String recipientId) {
+    repliedMsgId.value = value;
+
+    if (HiveService.instance.userData?.id == recipientId) {
+      repliedName.value = name;
+      update();
+    } else {
+      repliedName.value = "You";
+      update();
+    }
+
+    update();
+  }
+
+  closeReply() {
+    repliedMsgId.value = "false";
+    update();
   }
 
   @override

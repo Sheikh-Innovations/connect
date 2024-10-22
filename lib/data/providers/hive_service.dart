@@ -142,6 +142,7 @@ class HiveService {
         message: message ?? existingMessage.message,
         name: existingMessage.name,
         avater: existingMessage.avater,
+        replyTo: existingMessage.replyTo,
         repliedMsgId: existingMessage.repliedMsgId,
         messageId: existingMessage.messageId,
         isSeen: isSeen ?? existingMessage.isSeen,
@@ -246,7 +247,7 @@ class HiveService {
     // Check if the box contains any values before retrieving
     if (box.isEmpty) {
       if (kDebugMode) {
-        print('No messages found');
+        print('No seen messages found');
       }
       return []; // Return an empty list if no messages exist
     }
@@ -292,6 +293,7 @@ class HiveService {
         isTyping: existingMessage!.isTyping,
         isSeen: existingMessage.isSeen,
         senderId: existingMessage.senderId,
+        replyTo: existingMessage.replyTo,
         repliedMsgId: existingMessage.repliedMsgId,
         recipientId: existingMessage.recipientId,
         avater: existingMessage.avater,
